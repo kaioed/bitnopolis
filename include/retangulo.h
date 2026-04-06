@@ -1,9 +1,11 @@
 #ifndef RETANGULO_H
 #define RETANGULO_H
-
-/*
- * @brief Retângulo é uma forma geométrica definida por um ponto de origem (x, y),
- * largura (w) e altura (h), além de cor de preenchimento e cor de borda.
+/**
+ * @file retangulo.h
+ * @brief Biblioteca para criação e manipulação de retângulos.
+ *
+ * Esta biblioteca define um tipo opaco Retangulo e funções para criar,
+ * obter propriedades, alterar cores e liberar memória associada.
  */
 
 typedef void *Retangulo;

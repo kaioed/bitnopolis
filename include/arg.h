@@ -1,5 +1,12 @@
 #ifndef ARGS_HANDLER_H
 #define ARGS_HANDLER_H
+/**
+ * @file arg.h
+ * @brief Biblioteca de utilitários para tratamento de argumentos de linha de comando.
+ *
+ * Esta biblioteca auxilia na leitura de opções no formato "-opt valor" e
+ * na extração do sufixo de comando final passado para o programa.
+ */
 
 #include <stdio.h>
 

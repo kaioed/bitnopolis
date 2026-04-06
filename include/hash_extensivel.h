@@ -1,5 +1,12 @@
 #ifndef HASH_EXTENSIVEL_H
 #define HASH_EXTENSIVEL_H
+/**
+* @file hash_extensivel.h
+* @brief Biblioteca para manipulação de um Hash Extensível simples.
+ *
+ * Esta biblioteca fornece uma interface opaca para criar, inserir, buscar,
+ * remover e destruir registros em uma tabela de hash extensível.
+ */
 
 #include <stdbool.h>
 
