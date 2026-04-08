@@ -4,10 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Função para lidar com argumentos no formato -opt valorDaOpcao
-// argc e argv são os argumentos da função main
-// opt_name é o nome da opção (sem o '-'), por exemplo: "opt"
-// Retorna um ponteiro para o valor da opção ou NULL se não for encontrado
 char *obter_valor_opcao(int argc, char *argv[], char *opt_name) {
   char formato_opt[64];
   snprintf(formato_opt, sizeof(formato_opt), "-%s", opt_name);

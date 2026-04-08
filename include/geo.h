@@ -1,89 +1,39 @@
-#ifndef GEO_H
-#define GEO_H
 /**
  * @file geo.h
- * @brief Biblioteca de operações geométricas para quadras.
- *
- * Esta biblioteca fornece uma interface opaca para criar, consultar e destruir
- * objetos Quadra, além de processar arquivos .geo com comandos de criação.
+ * @author Kaio E. L. dos Santos
+ * @brief Funções para leitura e processamento de arquivos de formato .geo.
+ * @version 1.0
+ * @date 2026-04-08
+ * * @details Este módulo é responsável por fazer o parser de arquivos `.geo`, 
+ * que contêm comandos para a criação de formas geométricas (como quadras). 
+ * Ele extrai as informações, armazena as formas em uma estrutura de dados 
+ * e gera um arquivo de saída em formato SVG.
  */
+
+#ifndef GEO_H
+#define GEO_H
 
 #include <stdbool.h>
 
-typedef void* Quadra;
-
 /**
- * @brief Cria e aloca uma nova Quadra na memória.
+ * @brief Processa um arquivo .geo, armazena as formas e gera um arquivo SVG.
+ * * @details A função lê linha por linha do arquivo de entrada. 
+ * Ao encontrar o comando "cq", atualiza os atributos padrão (espessura, 
+ * cor de preenchimento e cor de borda). 
+ * Ao encontrar o comando "q", cria uma nova quadra, a armazena na 
+ * estrutura de dados fornecida e escreve a tag `<rect>` correspondente 
+ * no arquivo SVG.
+ * * @param[in] caminho_arquivo O caminho completo para o arquivo `.geo` de entrada.
+ * @param[in] caminho_svg O caminho completo onde o arquivo `.svg` de saída será salvo.
+ * @param[in,out] hash_quadras Ponteiro para a estrutura de dados (ex: Hash Map) 
+ * onde as quadras lidas serão armazenadas.
+ * * @return Retorna `true` se ambos os arquivos (leitura e escrita) foram 
+ * abertos com sucesso e processados. Retorna `false` em caso de erro 
+ * (ex: arquivo não encontrado ou permissão negada).
+ * * @warning A memória das quadras criadas e armazenadas no `hash_quadras` 
+ * **não** é liberada por esta função. É responsabilidade do chamador 
+ * liberar a memória da estrutura de dados posteriormente.
  */
-Quadra geo_criar_quadra(const char* cep, double x, double y, double w, double h, const char* cfill, const char* cstrk, double sw);
+bool geo_processar_arquivo(const char* caminho_arquivo, const char* caminho_svg, void* hash_quadras);
 
-/**
- * @brief Retorna o CEP da quadra.
- * @param q Ponteiro opaco para a quadra.
- * @return String com o CEP ou NULL em caso de ponteiro inválido.
- */
-const char* geo_get_cep(Quadra q);
-
-/**
- * @brief Retorna a coordenada X da quadra.
- * @param q Ponteiro opaco para a quadra.
- * @return Valor X ou 0.0 em caso de ponteiro inválido.
- */
-double geo_get_x(Quadra q);
-
-/**
- * @brief Retorna a coordenada Y da quadra.
- * @param q Ponteiro opaco para a quadra.
- * @return Valor Y ou 0.0 em caso de ponteiro inválido.
- */
-double geo_get_y(Quadra q);
-
-/**
- * @brief Retorna a largura da quadra.
- * @param q Ponteiro opaco para a quadra.
- * @return Largura ou 0.0 em caso de ponteiro inválido.
- */
-double geo_get_w(Quadra q);
-
-/**
- * @brief Retorna a altura da quadra.
- * @param q Ponteiro opaco para a quadra.
- * @return Altura ou 0.0 em caso de ponteiro inválido.
- */
-double geo_get_h(Quadra q);
-
-/**
- * @brief Retorna a cor de preenchimento da quadra.
- * @param q Ponteiro opaco para a quadra.
- * @return String com a cor de preenchimento ou NULL em caso de ponteiro inválido.
- */
-const char* geo_get_cfill(Quadra q);
-
-/**
- * @brief Retorna a cor da borda da quadra.
- * @param q Ponteiro opaco para a quadra.
- * @return String com a cor da borda ou NULL em caso de ponteiro inválido.
- */
-const char* geo_get_cstrk(Quadra q);
-
-/**
- * @brief Retorna a espessura da borda da quadra.
- * @param q Ponteiro opaco para a quadra.
- * @return Espessura da borda ou 0.0 em caso de ponteiro inválido.
- */
-double geo_get_sw(Quadra q);
-
-/**
- * @brief Libera a memória alocada para a quadra.
- */
-void geo_destruir_quadra(Quadra q);
-
-/**
- * @brief Abre e processa o arquivo .geo, interpretando comandos 'cq' e 'q'.
- * @param caminho_arquivo Caminho para o arquivo .geo
- * @param hash_quadras Ponteiro genérico para o seu HashFile Dinâmico (onde as quadras serão salvas).
- * @return true se o arquivo foi processado com sucesso, false caso dê erro (ex: arquivo não encontrado).
- */
-bool geo_processar_arquivo(const char* caminho_arquivo, void* hash_quadras);
-
-#endif
+#endif // GEO_H
