@@ -3,9 +3,10 @@
 #include <string.h>
 #include "../include/hash_extensivel.h"
 
+
 typedef struct {
-    int chave;
-    char dado[50];
+    char chave[TAMANHO_CHAVE]; 
+    char dado[TAMANHO_DADO];
 } Registro;
 
 typedef struct {
@@ -17,13 +18,26 @@ typedef struct {
 typedef struct {
     int profundidade_global;
     int tamanho_diretorio;
-    long* diretorio_offsets; // Guarda os bytes exatos no arquivo
-    FILE* arquivo;           // Ponteiro para o arquivo binário aberto
+    long* diretorio_offsets; 
+    FILE* arquivo;           
 } HashInterno;
 
-int funcao_hash(int chave, int profundidade) {
-    return chave & ((1 << profundidade) - 1);
+
+unsigned int funcao_hash_string(const char* str) {
+    unsigned int hash = 5381;
+    int c;
+    while ((c = *str++)) {
+        hash = ((hash << 5) + hash) + c; 
+    }
+    return hash;
 }
+
+
+int calcular_indice(const char* chave, int profundidade) {
+    unsigned int hash_completo = funcao_hash_string(chave);
+    return hash_completo & ((1 << profundidade) - 1);
+}
+
 
 void ler_balde(FILE* f, long offset, Balde* b) {
     fseek(f, offset, SEEK_SET);
@@ -68,18 +82,18 @@ HashExtensivel* hash_criar(int profundidade_inicial, const char* nome_arquivo) {
     return (HashExtensivel*)hash;
 }
 
-bool hash_buscar(HashExtensivel* ptr_hash, int chave, char* saida_dado) {
+bool hash_buscar(HashExtensivel* ptr_hash, const char* chave, char* saida_dado) {
     HashInterno* hash = (HashInterno*)ptr_hash;
-    int indice = funcao_hash(chave, hash->profundidade_global);
+    int indice = calcular_indice(chave, hash->profundidade_global);
     long offset = hash->diretorio_offsets[indice];
     
     Balde b;
     ler_balde(hash->arquivo, offset, &b);
 
     for (int i = 0; i < b.quantidade; i++) {
-        if (b.registros[i].chave == chave) {
+        if (strcmp(b.registros[i].chave, chave) == 0) { 
             if (saida_dado != NULL) {
-                strcpy(saida_dado, b.registros[i].dado);
+                memcpy(saida_dado, b.registros[i].dado, TAMANHO_DADO);
             }
             return true;
         }
@@ -87,7 +101,8 @@ bool hash_buscar(HashExtensivel* ptr_hash, int chave, char* saida_dado) {
     return false;
 }
 
-bool hash_inserir(HashExtensivel* ptr_hash, int chave, const char* dado);
+
+bool hash_inserir(HashExtensivel* ptr_hash, const char* chave, const char* dado);
 
 void tratar_split(HashInterno* hash, int indice_cheio) {
     long offset_antigo = hash->diretorio_offsets[indice_cheio];
@@ -125,7 +140,6 @@ void tratar_split(HashInterno* hash, int indice_cheio) {
     balde_antigo.quantidade = 0; 
 
     long offset_novo = anexar_balde(hash->arquivo, &balde_novo);
-
     
     int mascara_novo = 1 << (nova_profundidade - 1);
     for (int i = 0; i < hash->tamanho_diretorio; i++) {
@@ -134,34 +148,30 @@ void tratar_split(HashInterno* hash, int indice_cheio) {
         }
     }
 
-   
     escrever_balde(hash->arquivo, offset_antigo, &balde_antigo);
-
 
     for (int i = 0; i < qtd_temp; i++) {
         hash_inserir((HashExtensivel*)hash, temporario[i].chave, temporario[i].dado); 
     }
 }
 
-bool hash_inserir(HashExtensivel* ptr_hash, int chave, const char* dado) {
+bool hash_inserir(HashExtensivel* ptr_hash, const char* chave, const char* dado) {
     HashInterno* hash = (HashInterno*)ptr_hash;
     
     if (hash_buscar(ptr_hash, chave, NULL)) return false; 
 
-    int indice = funcao_hash(chave, hash->profundidade_global);
+    int indice = calcular_indice(chave, hash->profundidade_global);
     long offset = hash->diretorio_offsets[indice];
-    
     
     Balde b;
     ler_balde(hash->arquivo, offset, &b);
 
     if (b.quantidade < TAMANHO_BALDE) {
-       
-        b.registros[b.quantidade].chave = chave;
-        strncpy(b.registros[b.quantidade].dado, dado, 49);
-        b.registros[b.quantidade].dado[49] = '\0';
-        b.quantidade++;
+        strncpy(b.registros[b.quantidade].chave, chave, TAMANHO_CHAVE - 1);
+        b.registros[b.quantidade].chave[TAMANHO_CHAVE - 1] = '\0'; 
         
+        memcpy(b.registros[b.quantidade].dado, dado, TAMANHO_DADO);
+        b.quantidade++;
         
         escrever_balde(hash->arquivo, offset, &b);
         return true;
@@ -171,20 +181,18 @@ bool hash_inserir(HashExtensivel* ptr_hash, int chave, const char* dado) {
     }
 }
 
-bool hash_remover(HashExtensivel* ptr_hash, int chave) {
+bool hash_remover(HashExtensivel* ptr_hash, const char* chave) {
     HashInterno* hash = (HashInterno*)ptr_hash;
-    int indice = funcao_hash(chave, hash->profundidade_global);
+    int indice = calcular_indice(chave, hash->profundidade_global);
     long offset = hash->diretorio_offsets[indice];
-    
     
     Balde b;
     ler_balde(hash->arquivo, offset, &b);
 
     for (int i = 0; i < b.quantidade; i++) {
-        if (b.registros[i].chave == chave) {
+        if (strcmp(b.registros[i].chave, chave) == 0) {
             b.registros[i] = b.registros[b.quantidade - 1];
             b.quantidade--;
-            
             
             escrever_balde(hash->arquivo, offset, &b);
             return true;

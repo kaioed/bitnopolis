@@ -51,3 +51,27 @@ clean:
 	rm -rf $(OBJ_DIR) $(EXEC) run_tests
 
 .PHONY: all clean test
+
+CFLAGS = -std=c99 -fstack-protector-all -Wall
+
+INC = -I./include -I./test/Unity
+
+
+test_hash:
+	gcc $(CFLAGS) $(INC) test/teste_hash.c test/Unity/unity.c src/hash_extensivel.c -o ./obj/teste_hash
+	./obj/teste_hash
+
+test_quadra:
+	gcc $(CFLAGS) $(INC) test/teste_quadra.c test/Unity/unity.c src/quadra.c -o ./obj/teste_quadra
+	./obj/teste_quadra
+
+test_geo:
+	gcc $(CFLAGS) $(INC) test/teste_geo.c test/Unity/unity.c src/geo.c src/quadra.c src/hash_extensivel.c -o ./obj/teste_geo
+	./obj/teste_geo
+
+test_pm:
+	gcc $(CFLAGS) $(INC) test/teste_pm.c test/Unity/unity.c src/pm.c src/habitantes.c src/hash_extensivel.c -o ./obj/teste_pm
+	./obj/teste_pm
+	
+clean_tests:
+	rm -f ./obj/teste_hash ./obj/teste_quadra ./obj/teste_geo ./obj/teste_pm *.hf *.geo *.pm *.svg

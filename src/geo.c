@@ -1,5 +1,6 @@
 #include "../include/geo.h"
 #include "../include/quadra.h"
+#include "../include/hash_extensivel.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -26,7 +27,7 @@ bool geo_processar_arquivo(const char* caminho_arquivo, const char* caminho_svg,
     char cor_borda[30] = "black";
     double espessura_borda = 1.0; 
 
-    while (fscanf(file, "%s", comando) != EOF) {
+while (fscanf(file, "%s", comando) != EOF) {
         if (strcmp(comando, "cq") == 0) {
             fscanf(file, "%lf %s %s", &espessura_borda, cor_preenchimento, cor_borda);
         } 
@@ -35,19 +36,23 @@ bool geo_processar_arquivo(const char* caminho_arquivo, const char* caminho_svg,
             double x, y, w, h;
             fscanf(file, "%s %lf %lf %lf %lf", cep, &x, &y, &w, &h);
             
-            // Cria a forma
-            Quadra q = quadra_criar(cep, x, y, w, h, cor_preenchimento, cor_borda, espessura_borda);
+            char dados_quadra[150];
+            
+          
+            snprintf(dados_quadra, sizeof(dados_quadra), "%lf;%lf;%lf;%lf;%s;%s;%lf", 
+                     x, y, w, h, cor_preenchimento, cor_borda, espessura_borda);
+            
+            
+            hash_inserir((HashExtensivel*)hash_quadras, cep, dados_quadra);
             
             fprintf(svg, "  <rect x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%lf\" />\n", 
                     x, y, w, h, cor_preenchimento, cor_borda, espessura_borda);
-            
         }
     }
     
     fprintf(svg, "</svg>\n");
-
+    
     fclose(file);
     fclose(svg);
-    
     return true;
 }
