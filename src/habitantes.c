@@ -1,252 +1,103 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../include/hash_extensivel.h"
+#include "../include/habitantes.h"
+
 
 typedef struct {
-    char chave[TAMANHO_CHAVE]; 
-    char dado[TAMANHO_DADO];
-} Registro;
+    char cpf[20];
+    char nome[100];
+    char sobrenome[100];
+    char sexo;
+    char nasc[20];
+    char cep[20];
+    char face[10];
+    int num;
+    char compl[100];
+} HabitanteStruct;
 
-typedef struct {
-    int profundidade_local;
-    int quantidade;
-    Registro registros[TAMANHO_BALDE];
-} Balde;
+Habitante habitante_criar(const char* cpf, const char* nome, const char* sobrenome, char sexo, const char* nasc) {
+    HabitanteStruct* h = (HabitanteStruct*) malloc(sizeof(HabitanteStruct));
+    if (!h) return NULL;
 
-typedef struct {
-    int profundidade_global;
-    int tamanho_diretorio;
-    long* diretorio_offsets; 
-    FILE* arquivo;           
-    char nome_base[256];
-} HashInterno;
+    strncpy(h->cpf, cpf, 19); h->cpf[19] = '\0';
+    strncpy(h->nome, nome, 99); h->nome[99] = '\0';
+    strncpy(h->sobrenome, sobrenome, 99); h->sobrenome[99] = '\0';
+    h->sexo = sexo;
+    strncpy(h->nasc, nasc, 19); h->nasc[19] = '\0';
 
-unsigned int funcao_hash_string(const char* str) {
-    unsigned int hash = 5381;
-    int c;
-    while ((c = *str++)) {
-        hash = ((hash << 5) + hash) + c; 
-    }
-    return hash;
+    h->cep[0] = '\0';
+    h->face[0] = '\0';
+    h->num = 0;
+    h->compl[0] = '\0';
+
+    return (Habitante) h;
 }
 
-int calcular_indice(const char* chave, int profundidade) {
-    unsigned int hash_completo = funcao_hash_string(chave);
-    return hash_completo & ((1 << profundidade) - 1);
+const char* habitante_get_cpf(Habitante h) {
+    if (!h) return NULL;
+    return ((HabitanteStruct*)h)->cpf;
 }
 
-void ler_balde(FILE* f, long offset, Balde* b) {
-    fseek(f, offset, SEEK_SET);
-    fread(b, sizeof(Balde), 1, f);
+const char* habitante_get_nome(Habitante h) {
+    if (!h) return NULL;
+    return ((HabitanteStruct*)h)->nome;
 }
 
-void escrever_balde(FILE* f, long offset, Balde* b) {
-    fseek(f, offset, SEEK_SET);
-    fwrite(b, sizeof(Balde), 1, f);
-    fflush(f);
+const char* habitante_get_sobrenome(Habitante h) {
+    if (!h) return NULL;
+    return ((HabitanteStruct*)h)->sobrenome;
 }
 
-long anexar_balde(FILE* f, Balde* b) {
-    fseek(f, 0, SEEK_END);
-    long offset = ftell(f);
-    fwrite(b, sizeof(Balde), 1, f);
-    fflush(f);
-    return offset;
+char habitante_get_sexo(Habitante h) {
+    if (!h) return '\0';
+    return ((HabitanteStruct*)h)->sexo;
 }
 
-HashExtensivel* hash_criar(int profundidade_inicial, const char* nome_arquivo) {
-    HashInterno* hash = (HashInterno*)malloc(sizeof(HashInterno));
-    hash->profundidade_global = profundidade_inicial;
-    hash->tamanho_diretorio = 1 << profundidade_inicial;
-    hash->diretorio_offsets = (long*)malloc(hash->tamanho_diretorio * sizeof(long));
-    strncpy(hash->nome_base, nome_arquivo, 255);
-    
-    hash->arquivo = fopen(nome_arquivo, "wb+");
-    if (!hash->arquivo) {
-        free(hash->diretorio_offsets);
-        free(hash);
-        return NULL;
-    }
-
-    char log_exp[256];
-    snprintf(log_exp, sizeof(log_exp), "%s_exp.log", hash->nome_base);
-    FILE* f_log = fopen(log_exp, "w");
-    if(f_log) fclose(f_log);
-
-    Balde b_vazio;
-    b_vazio.profundidade_local = profundidade_inicial;
-    b_vazio.quantidade = 0;
-
-    for (int i = 0; i < hash->tamanho_diretorio; i++) {
-        hash->diretorio_offsets[i] = anexar_balde(hash->arquivo, &b_vazio);
-    }
-    
-    return (HashExtensivel*)hash;
+const char* habitante_get_nasc(Habitante h) {
+    if (!h) return NULL;
+    return ((HabitanteStruct*)h)->nasc;
 }
 
-bool hash_buscar(HashExtensivel* ptr_hash, const char* chave, char* saida_dado) {
-    HashInterno* hash = (HashInterno*)ptr_hash;
-    int indice = calcular_indice(chave, hash->profundidade_global);
-    long offset = hash->diretorio_offsets[indice];
-    
-    Balde b;
-    ler_balde(hash->arquivo, offset, &b);
-
-    for (int i = 0; i < b.quantidade; i++) {
-        if (strcmp(b.registros[i].chave, chave) == 0) { 
-            if (saida_dado != NULL) {
-                memcpy(saida_dado, b.registros[i].dado, TAMANHO_DADO);
-            }
-            return true;
-        }
-    }
-    return false;
+const char* habitante_get_cep(Habitante h) {
+    if (!h) return NULL;
+    return ((HabitanteStruct*)h)->cep;
 }
 
-bool hash_inserir(HashExtensivel* ptr_hash, const char* chave, const char* dado);
+char* habitante_get_face(Habitante h) {
+    if (!h) return NULL;
+    return ((HabitanteStruct*)h)->face;
+}
 
-void tratar_split(HashInterno* hash, int indice_cheio) {
-    long offset_antigo = hash->diretorio_offsets[indice_cheio];
-    
-    Balde balde_antigo;
-    ler_balde(hash->arquivo, offset_antigo, &balde_antigo);
-    
-    if (balde_antigo.profundidade_local == hash->profundidade_global) {
-        int novo_tamanho = hash->tamanho_diretorio * 2;
-        long* novo_diretorio = (long*)malloc(novo_tamanho * sizeof(long));
-        
-        for (int i = 0; i < hash->tamanho_diretorio; i++) {
-            novo_diretorio[i] = hash->diretorio_offsets[i];
-            novo_diretorio[i + hash->tamanho_diretorio] = hash->diretorio_offsets[i];
-        }
-        
-        free(hash->diretorio_offsets);
-        hash->diretorio_offsets = novo_diretorio;
-        hash->tamanho_diretorio = novo_tamanho;
-        hash->profundidade_global++;
-    }
+int habitante_get_num(Habitante h) {
+    if (!h) return 0;
+    return ((HabitanteStruct*)h)->num;
+}
 
-    int nova_profundidade = balde_antigo.profundidade_local + 1;
-    
-    char log_exp[256];
-    snprintf(log_exp, sizeof(log_exp), "%s_exp.log", hash->nome_base);
-    FILE* f_log = fopen(log_exp, "a");
-    if(f_log) {
-        fprintf(f_log, "Expansao no indice %d: Prof Local %d -> %d | Prof Global %d\n", indice_cheio, balde_antigo.profundidade_local, nova_profundidade, hash->profundidade_global);
-        fclose(f_log);
-    }
+const char* habitante_get_compl(Habitante h) {
+    if (!h) return NULL;
+    return ((HabitanteStruct*)h)->compl;
+}
 
-    balde_antigo.profundidade_local = nova_profundidade;
-    
-    Balde balde_novo;
-    balde_novo.profundidade_local = nova_profundidade;
-    balde_novo.quantidade = 0;
+void alterar_endereco_habitante(Habitante h, const char* cep, const char* face, int num, const char* compl) {
+    if (!h) return;
+    HabitanteStruct* s = (HabitanteStruct*)h;
 
-    Registro temporario[TAMANHO_BALDE];
-    int qtd_temp = balde_antigo.quantidade;
-    for(int i = 0; i < qtd_temp; i++) {
-        temporario[i] = balde_antigo.registros[i];
-    }
-    balde_antigo.quantidade = 0; 
+    if (cep) { strncpy(s->cep, cep, 19); s->cep[19] = '\0'; }
+    if (face) { strncpy(s->face, face, 9); s->face[9] = '\0'; }
+    s->num = num;
+    if (compl) { strncpy(s->compl, compl, 99); s->compl[99] = '\0'; }
+}
 
-    long offset_novo = anexar_balde(hash->arquivo, &balde_novo);
-    
-    int mascara_novo = 1 << (nova_profundidade - 1);
-    for (int i = 0; i < hash->tamanho_diretorio; i++) {
-        if (hash->diretorio_offsets[i] == offset_antigo && (i & mascara_novo)) {
-            hash->diretorio_offsets[i] = offset_novo;
-        }
-    }
-
-    escrever_balde(hash->arquivo, offset_antigo, &balde_antigo);
-
-    for (int i = 0; i < qtd_temp; i++) {
-        hash_inserir((HashExtensivel*)hash, temporario[i].chave, temporario[i].dado); 
+void habitante_destruir(Habitante h) {
+    if (h) {
+        free(h);
     }
 }
 
-bool hash_inserir(HashExtensivel* ptr_hash, const char* chave, const char* dado) {
-    HashInterno* hash = (HashInterno*)ptr_hash;
+void formatar_dados_habitante(const char* nome, const char* sobrenome, char sexo, const char* nasc, const char* cep, const char* face, int num, const char* compl, char* saida) {
+    if (!saida) return;
     
-    if (hash_buscar(ptr_hash, chave, NULL)) return false; 
-
-    int indice = calcular_indice(chave, hash->profundidade_global);
-    long offset = hash->diretorio_offsets[indice];
-    
-    Balde b;
-    ler_balde(hash->arquivo, offset, &b);
-
-    if (b.quantidade < TAMANHO_BALDE) {
-        strncpy(b.registros[b.quantidade].chave, chave, TAMANHO_CHAVE - 1);
-        b.registros[b.quantidade].chave[TAMANHO_CHAVE - 1] = '\0'; 
-        
-        memcpy(b.registros[b.quantidade].dado, dado, TAMANHO_DADO);
-        b.quantidade++;
-        
-        escrever_balde(hash->arquivo, offset, &b);
-        return true;
-    } else {
-        tratar_split(hash, indice);
-        return hash_inserir(ptr_hash, chave, dado);
-    }
-}
-
-bool hash_remover(HashExtensivel* ptr_hash, const char* chave) {
-    HashInterno* hash = (HashInterno*)ptr_hash;
-    int indice = calcular_indice(chave, hash->profundidade_global);
-    long offset = hash->diretorio_offsets[indice];
-    
-    Balde b;
-    ler_balde(hash->arquivo, offset, &b);
-
-    for (int i = 0; i < b.quantidade; i++) {
-        if (strcmp(b.registros[i].chave, chave) == 0) {
-            b.registros[i] = b.registros[b.quantidade - 1];
-            b.quantidade--;
-            
-            escrever_balde(hash->arquivo, offset, &b);
-            return true;
-        }
-    }
-    return false;
-}
-
-void hash_destruir(HashExtensivel* ptr_hash) {
-    HashInterno* hash = (HashInterno*)ptr_hash;
-    
-    char arq_hfd[256];
-    snprintf(arq_hfd, sizeof(arq_hfd), "%s.hfd", hash->nome_base);
-    FILE* f_hfd = fopen(arq_hfd, "w");
-    if(f_hfd) {
-        fprintf(f_hfd, "REPRESENTACAO HASH\n");
-        fprintf(f_hfd, "Profundidade Global: %d\n", hash->profundidade_global);
-        for(int i = 0; i < hash->tamanho_diretorio; i++) {
-            Balde b;
-            ler_balde(hash->arquivo, hash->diretorio_offsets[i], &b);
-            fprintf(f_hfd, "Diretorio[%d] -> Offset %ld | Prof Local: %d | Qtd: %d\n", i, hash->diretorio_offsets[i], b.profundidade_local, b.quantidade);
-            for(int j = 0; j < b.quantidade; j++) {
-                fprintf(f_hfd, "  [%s]: %s\n", b.registros[j].chave, b.registros[j].dado);
-            }
-        }
-        fprintf(f_hfd, "\nREGISTRO DE EXPANSOES\n");
-        char log_exp[256];
-        snprintf(log_exp, sizeof(log_exp), "%s_exp.log", hash->nome_base);
-        FILE* f_log = fopen(log_exp, "r");
-        if(f_log) {
-            char linha[256];
-            while(fgets(linha, sizeof(linha), f_log)) {
-                fprintf(f_hfd, "%s", linha);
-            }
-            fclose(f_log);
-            remove(log_exp);
-        }
-        fclose(f_hfd);
-    }
-
-    if (hash->arquivo) {
-        fclose(hash->arquivo); 
-    }
-    free(hash->diretorio_offsets);
-    free(hash);
+    sprintf(saida, "Nome: %s %s | Sexo: %c | Nasc: %s | CEP: %s | Face: %s | Num: %d | Compl: %s",
+            nome, sobrenome, sexo, nasc, cep, face, num, (compl ? compl : "N/A"));
 }

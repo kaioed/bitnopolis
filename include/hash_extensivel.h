@@ -23,12 +23,12 @@
 /**
  * @brief Tamanho máximo da chave de busca/inserção.
  */
-#define TAMANHO_CHAVE 30
+#define TAMANHO_CHAVE 50
 
 /**
  * @brief Tamanho máximo do dado associado a uma chave.
  */
-#define TAMANHO_DADO 150
+#define TAMANHO_DADO 256
 
 /**
  * @brief Tipo opaco para representar uma tabela hash extensível.

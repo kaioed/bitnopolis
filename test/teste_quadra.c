@@ -10,12 +10,11 @@ void test_deve_criar_e_destruir_quadra_com_sucesso(void) {
     TEST_ASSERT_NOT_NULL(q);
     
     TEST_ASSERT_EQUAL_STRING("cep15", quadra_get_cep(q));
-    TEST_ASSERT_EQUAL_FLOAT(10.0, quadra_get_x(q));
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 10.0, quadra_get_x(q));
     TEST_ASSERT_EQUAL_STRING("red", quadra_get_cfill(q));
     TEST_ASSERT_EQUAL_STRING("black", quadra_get_cstrk(q));
-    TEST_ASSERT_EQUAL_FLOAT(2.5, quadra_get_sw(q));
+    TEST_ASSERT_DOUBLE_WITHIN(0.0001, 2.5, quadra_get_sw(q));
 
-    
     quadra_destruir(q);
 }
 

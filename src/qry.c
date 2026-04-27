@@ -15,6 +15,7 @@ typedef struct {
 } CensoStats;
 
 void callback_censo(const char* chave, const char* dado, void* extra) {
+    (void)chave;
     CensoStats* stats = (CensoStats*)extra;
     char nome[50], sobrenome[50], nasc[20], cep[50];
     char sexo;
@@ -47,7 +48,9 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
     else strcat(caminho_svg, ".svg");
 
     FILE* svg = fopen(caminho_svg, "w");
-    if (svg) fprintf(svg, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"2000\" height=\"2000\">\n");
+    if (svg) {
+        fprintf(svg, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%%\" height=\"100%%\" viewBox=\"-100 -100 5000 5000\">\n");
+    }
 
     HashExtensivel* hq = (HashExtensivel*)hash_quadras;
     HashExtensivel* hh = (HashExtensivel*)hash_habitantes;
@@ -69,7 +72,8 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
                 if (svg) {
                     double x, y;
                     sscanf(dados_quadra, "%lf;%lf", &x, &y);
-                    fprintf(svg, "<text x=\"%lf\" y=\"%lf\" fill=\"red\" font-size=\"14\">X</text>\n", x, y);
+                    // Aumentei drasticamente a fonte (font-size="40") para ficar visivel
+                    fprintf(svg, "  <text x=\"%lf\" y=\"%lf\" fill=\"red\" font-size=\"40\" font-weight=\"bold\">X</text>\n", x, y);
                 }
             } else {
                 fprintf(saida, "Aviso: Quadra %s nao encontrada.\n", cep);
@@ -135,7 +139,7 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
                         if (hash_buscar(hq, cep, dados_quadra)) {
                             double x, y;
                             sscanf(dados_quadra, "%lf;%lf", &x, &y);
-                            fprintf(svg, "<text x=\"%lf\" y=\"%lf\" fill=\"red\" font-size=\"14\">+</text>\n", x, y);
+                            fprintf(svg, "  <text x=\"%lf\" y=\"%lf\" fill=\"red\" font-size=\"40\" font-weight=\"bold\">+</text>\n", x, y);
                         }
                     }
                 }
@@ -165,8 +169,9 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
                     if (hash_buscar(hq, cep, dados_quadra)) {
                         double x, y;
                         sscanf(dados_quadra, "%lf;%lf", &x, &y);
-                        fprintf(svg, "<rect x=\"%lf\" y=\"%lf\" width=\"10\" height=\"10\" fill=\"red\" />\n", x, y);
-                        fprintf(svg, "<text x=\"%lf\" y=\"%lf\" font-size=\"8\">%s</text>\n", x+2, y+8, cpf);
+                        // Aumentei o quadrado vermelho e a fonte
+                        fprintf(svg, "  <rect x=\"%lf\" y=\"%lf\" width=\"25\" height=\"25\" fill=\"red\" />\n", x, y);
+                        fprintf(svg, "  <text x=\"%lf\" y=\"%lf\" font-size=\"20\">%s</text>\n", x+2, y+45, cpf);
                     }
                 }
             }
@@ -190,7 +195,7 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
                         if (hash_buscar(hq, cep, dados_quadra)) {
                             double x, y;
                             sscanf(dados_quadra, "%lf;%lf", &x, &y);
-                            fprintf(svg, "<circle cx=\"%lf\" cy=\"%lf\" r=\"5\" fill=\"black\" />\n", x, y);
+                            fprintf(svg, "  <circle cx=\"%lf\" cy=\"%lf\" r=\"15\" fill=\"black\" />\n", x+15, y+15);
                         }
                     }
 
@@ -206,6 +211,7 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
 
     if (svg) {
         fprintf(svg, "</svg>\n");
+        printf("SVG do QRY gerado com sucesso em: %s\n", caminho_svg);
         fclose(svg);
     }
     fclose(file);

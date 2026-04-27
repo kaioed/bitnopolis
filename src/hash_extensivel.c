@@ -93,7 +93,8 @@ bool hash_buscar(HashExtensivel* ptr_hash, const char* chave, char* saida_dado) 
     for (int i = 0; i < b.quantidade; i++) {
         if (strcmp(b.registros[i].chave, chave) == 0) { 
             if (saida_dado != NULL) {
-                memcpy(saida_dado, b.registros[i].dado, TAMANHO_DADO);
+                strncpy(saida_dado, b.registros[i].dado, TAMANHO_DADO);
+                saida_dado[TAMANHO_DADO - 1] = '\0'; 
             }
             return true;
         }
@@ -170,7 +171,8 @@ bool hash_inserir(HashExtensivel* ptr_hash, const char* chave, const char* dado)
         strncpy(b.registros[b.quantidade].chave, chave, TAMANHO_CHAVE - 1);
         b.registros[b.quantidade].chave[TAMANHO_CHAVE - 1] = '\0'; 
         
-        memcpy(b.registros[b.quantidade].dado, dado, TAMANHO_DADO);
+        strncpy(b.registros[b.quantidade].dado, dado, TAMANHO_DADO - 1);
+        b.registros[b.quantidade].dado[TAMANHO_DADO - 1] = '\0';
         b.quantidade++;
         
         escrever_balde(hash->arquivo, offset, &b);
@@ -210,4 +212,45 @@ void hash_destruir(HashExtensivel* ptr_hash) {
     
     free(hash->diretorio_offsets);
     free(hash);
+}
+
+void hash_iterar(HashExtensivel* ptr_hash, HashCallback callback, void* extra) {
+    if (ptr_hash == NULL || callback == NULL) {
+        return;
+    }
+
+    HashInterno* hash = (HashInterno*)ptr_hash;
+
+    long* offsets_visitados = (long*)malloc(hash->tamanho_diretorio * sizeof(long));
+    int qtd_visitados = 0;
+
+    for (int i = 0; i < hash->tamanho_diretorio; i++) {
+        long offset_atual = hash->diretorio_offsets[i];
+
+        bool ja_processado = false;
+        
+        for (int j = 0; j < qtd_visitados; j++) {
+            if (offsets_visitados[j] == offset_atual) {
+                ja_processado = true;
+                break;
+            }
+        }
+
+        if (ja_processado) {
+            continue;
+        }
+
+        
+        offsets_visitados[qtd_visitados] = offset_atual;
+        qtd_visitados++;
+
+        Balde b;
+        ler_balde(hash->arquivo, offset_atual, &b);
+
+        for (int k = 0; k < b.quantidade; k++) {
+            callback(b.registros[k].chave, b.registros[k].dado, extra);
+        }
+    }
+
+    free(offsets_visitados);
 }
