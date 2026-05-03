@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 typedef struct {
     char cep[30];
@@ -42,7 +43,7 @@ void desenhar_quadras(const char* chave, const char* dado, void* extra) {
     double x, y, w, h, espessura;
     char cor_preenchimento[30], cor_borda[30];
     
-    if (sscanf(dado, "%lf;%lf;%lf;%lf;%*[^;];%29[^;];%lf", &x, &y, &w, &h, cor_preenchimento, &espessura) >= 6) {
+    if (sscanf(dado, "%lf;%lf;%lf;%lf;%29[^;];%29[^;];%lf", &x, &y, &w, &h, cor_preenchimento, cor_borda, &espessura) >= 7) {
         
         char *ptr_borda = strchr(dado, ';');
         for (int i = 0; i < 4 && ptr_borda != NULL; i++) {
@@ -68,10 +69,10 @@ void calcular_coordenada_endereco(double q_x, double q_y, double q_w, double q_h
     *out_y = q_y;
 
     switch(toupper((unsigned char)face)) {
-        case 'N':
+        case 'S':
             *out_x += num;
             break;
-        case 'S':
+        case 'N':
             *out_x += num;
             *out_y += q_h;
             break;

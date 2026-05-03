@@ -35,12 +35,12 @@ bool geo_processar_arquivo(const char* caminho_arquivo, const char* caminho_svg,
             
             char dados_quadra[150];
             snprintf(dados_quadra, sizeof(dados_quadra), "%lf;%lf;%lf;%lf;%s;%s;%lf", 
-                     x, y, w, h, cor_preenchimento, cor_borda, espessura_borda);
+                     x, y, w, h, cor_borda, cor_preenchimento, espessura_borda);
             
             hash_inserir((HashExtensivel*)hash_quadras, cep, dados_quadra);
             
-            fprintf(svg, "  <rect x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%lf\" />\n", 
-                    x, y, w, h, cor_preenchimento, cor_borda, espessura_borda);
+            fprintf(svg, "  <rect x=\"%.lf\" y=\"%.lf\" width=\"%.lf\" height=\"%.lf\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%.lf\" />\n", 
+                    x, y, w, h, cor_borda, cor_preenchimento, espessura_borda);
         }
     }
     
