@@ -5,6 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
+static void converter_para_maiusculas(char *str) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        str[i] = (char)toupper((unsigned char)str[i]);
+    }
+}
 
 bool pm_processar_arquivo(const char* caminho_arquivo, void* ptr_hash_habitantes) {
     if (caminho_arquivo == NULL) return false;
@@ -35,6 +42,7 @@ bool pm_processar_arquivo(const char* caminho_arquivo, void* ptr_hash_habitantes
             int num;
             
             fscanf(file,"%s %s %s %d %s", cpf, cep, face, &num, compl);
+            converter_para_maiusculas(cep);
             
             char buffer_busca[150];
             

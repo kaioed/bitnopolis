@@ -63,11 +63,9 @@ void callback_remocao_quadra(const char* chave, const char* dado, void* extra) {
     char sexo;
     int num;
     
-    // Extrai os dados do habitante
     if (sscanf(dado, "%49[^;];%49[^;];%c;%19[^;];%*d;%49[^;];%9[^;];%d", 
                nome, sobrenome, &sexo, nasc, cep, face, &num) < 7) return;
     
-    // Se o habitante mora na quadra que vai ser removida
     if (strcmp(cep, ctx->cep_alvo) == 0) {
         // Informa no TXT
         fprintf(ctx->arquivo_saida, "  Morador: %s %s (CPF: %s)\n", nome, sobrenome, chave);
@@ -88,7 +86,7 @@ typedef struct {
 
 typedef struct {
     const char* cep_alvo;
-    ContagemPorFace faces[4]; // N, S, L, O
+    ContagemPorFace faces[4]; 
     int total;
 } ContextoContagemFaces;
 
@@ -169,7 +167,7 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
     if (svg) {
         fprintf(svg, "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%%\" height=\"100%%\" viewBox=\"-100 -100 5000 5000\">\n");
         hash_iterar(hq, desenhar_quadras, svg);
-        hash_iterar(hq, desenhar_textos_quadras, svg); // <- Escreve os CEPs em cada quadra
+        hash_iterar(hq, desenhar_textos_quadras, svg); 
     }
     
     char linha[256];
@@ -242,16 +240,16 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
                         if (sscanf(dados_quadra, "%lf;%lf;%lf;%lf", &x, &y, &w, &h) == 4) {
                             // Norte
                             fprintf(svg, "\t<text x=\"%.2lf\" y=\"%.2lf\" font-size=\"14\" fill=\"black\" font-weight=\"bold\">%d</text>\n", 
-                                    x + w/2 - 5, y - 5, ctx.faces[1].count);
+                                    x + w/2 - 5, y + 18, ctx.faces[1].count);
                             // Sul
                             fprintf(svg, "\t<text x=\"%.2lf\" y=\"%.2lf\" font-size=\"14\" fill=\"black\" font-weight=\"bold\">%d</text>\n", 
-                                    x + w/2 - 5, y + h + 20, ctx.faces[0].count);
+                                    x + w/2 - 5, y + h - 8, ctx.faces[0].count);
                             // Leste
                             fprintf(svg, "\t<text x=\"%.2lf\" y=\"%.2lf\" font-size=\"14\" fill=\"black\" font-weight=\"bold\">%d</text>\n", 
-                                    x + w + 10, y + h/2 + 5, ctx.faces[2].count);
+                                    x + w - 18, y + h/2 + 5, ctx.faces[2].count);
                             // Oeste
                             fprintf(svg, "\t<text x=\"%.2lf\" y=\"%.2lf\" font-size=\"14\" fill=\"black\" font-weight=\"bold\">%d</text>\n", 
-                                    x - 25, y + h/2 + 5, ctx.faces[3].count);
+                                    x + 8, y + h/2 + 5, ctx.faces[3].count);
                             // Total no centro
                             fprintf(svg, "\t<text x=\"%.2lf\" y=\"%.2lf\" font-size=\"16\" fill=\"black\" font-weight=\"bold\">%d</text>\n", 
                                     x + w/2 - 8, y + h/2 + 8, ctx.total);

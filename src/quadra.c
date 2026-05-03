@@ -44,23 +44,8 @@ void desenhar_quadras(const char* chave, const char* dado, void* extra) {
     char cor_preenchimento[30], cor_borda[30];
     
     if (sscanf(dado, "%lf;%lf;%lf;%lf;%29[^;];%29[^;];%lf", &x, &y, &w, &h, cor_preenchimento, cor_borda, &espessura) >= 7) {
-        
-        char *ptr_borda = strchr(dado, ';');
-        for (int i = 0; i < 4 && ptr_borda != NULL; i++) {
-            ptr_borda = strchr(ptr_borda + 1, ';');
-        }
-        
-        if(ptr_borda != NULL) {
-            ptr_borda++;
-            char *ptr_espessura = strchr(ptr_borda, ';');
-            if(ptr_espessura != NULL) {
-                int len = ptr_espessura - ptr_borda;
-                strncpy(cor_borda, ptr_borda, len);
-                cor_borda[len] = '\0';
-                
-                fprintf(svg, "  <rect x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%lf\" />\n", x, y, w, h, cor_preenchimento, cor_borda, espessura);
-            }
-        }
+        fprintf(svg, "  <rect x=\"%lf\" y=\"%lf\" width=\"%lf\" height=\"%lf\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%lf\" />\n",
+                x, y, w, h, cor_preenchimento, cor_borda, espessura);
     }
 }
 

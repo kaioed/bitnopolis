@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 
     char caminho_geo[512], caminho_svg[512];
     snprintf(caminho_geo, sizeof(caminho_geo), "%s/%s", prefixo_pasta, entrada_geo);
-    snprintf(caminho_svg, sizeof(caminho_svg), "%s/%s.svg", saida_pasta, entrada_geo);
+    snprintf(caminho_svg, sizeof(caminho_svg), "%s/geo_output.svg", saida_pasta);
 
     HashExtensivel* hash_quadras = hash_criar(2, "hash_quadras.hf");
     if (!hash_quadras) {
