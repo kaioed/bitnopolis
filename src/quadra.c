@@ -77,10 +77,10 @@ void calcular_coordenada_endereco(double q_x, double q_y, double q_w, double q_h
             *out_y += q_h;
             break;
         case 'L':
-            *out_x += q_w;
             *out_y += num;
             break;
         case 'O':
+            *out_x += q_w;
             *out_y += num;
             break;
         default: 
