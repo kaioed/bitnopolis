@@ -97,4 +97,8 @@ double quadra_get_sw(Quadra q);
  */
 void quadra_destruir(Quadra q);
 
+void desenhar_quadras(const char* chave, const char* dado, void* extra);
+
+void calcular_coordenada_endereco(double q_x, double q_y, double q_w, double q_h, char face, int num, double *out_x, double *out_y);
+
 #endif

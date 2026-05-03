@@ -36,4 +36,5 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
  */
 void callback_censo(const char* chave, const char* dado, void* extra);
 
+
 #endif 
