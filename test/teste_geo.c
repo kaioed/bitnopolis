@@ -3,6 +3,7 @@
 #include "../include/hash_extensivel.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void setUp(void) {}
 void tearDown(void) {}
@@ -29,7 +30,13 @@ void test_deve_processar_comandos_q_e_cq_corretamente(void) {
     
     FILE* svg_verificacao = fopen("temp_saida.svg", "r");
     TEST_ASSERT_NOT_NULL(svg_verificacao);
-    if(svg_verificacao) fclose(svg_verificacao);
+    if(svg_verificacao) {
+        char conteudo_svg[1024];
+        size_t lidos = fread(conteudo_svg, 1, sizeof(conteudo_svg) - 1, svg_verificacao);
+        conteudo_svg[lidos] = '\0';
+        TEST_ASSERT_NOT_NULL(strstr(conteudo_svg, ">86010-000</text>"));
+        fclose(svg_verificacao);
+    }
     
     hash_destruir(hash_temp);
     remove("temp_entrada.geo");

@@ -15,6 +15,11 @@ typedef struct {
     bool possui_elementos;
 } SvgBounds;
 
+typedef struct {
+    FILE* svg;
+    SvgBounds* bounds;
+} SvgContext;
+
 static void converter_para_maiusculas(char *str) {
     for (int i = 0; str[i] != '\0'; i++) {
         str[i] = (char)toupper((unsigned char)str[i]);
@@ -50,6 +55,18 @@ static void svg_bounds_expandir_retangulo(SvgBounds* bounds, double x, double y,
     if (min_y < bounds->min_y) bounds->min_y = min_y;
     if (max_x > bounds->max_x) bounds->max_x = max_x;
     if (max_y > bounds->max_y) bounds->max_y = max_y;
+}
+
+static void svg_bounds_expandir_texto(SvgBounds* bounds, double x, double y, double font_size, const char* texto) {
+    size_t comprimento = (texto != NULL) ? strlen(texto) : 0;
+    double largura = (comprimento > 0) ? ((double)comprimento * font_size * 0.65) : font_size;
+    svg_bounds_expandir_retangulo(bounds, x, y - font_size, largura, font_size * 1.30);
+}
+
+static void desenhar_texto_quadra(const char* cep, double x, double y, SvgContext* ctx) {
+    fprintf(ctx->svg, "\t<text x=\"%.2lf\" y=\"%.2lf\" font-size=\"12\" fill=\"black\">%s</text>\n",
+            x + 5.0, y + 15.0, cep);
+    svg_bounds_expandir_texto(ctx->bounds, x + 5.0, y + 15.0, 12.0, cep);
 }
 
 static bool svg_escrever_arquivo_final(const char* caminho_svg, FILE* corpo_svg, const SvgBounds* bounds) {
@@ -106,6 +123,7 @@ bool geo_processar_arquivo(const char* caminho_arquivo, const char* caminho_svg,
     double espessura_borda = 1.0; 
     SvgBounds bounds;
     svg_bounds_inicializar(&bounds);
+    SvgContext svg_ctx = {corpo_svg, &bounds};
 
     while (fscanf(file, "%s", comando) != EOF) {
         if (strcmp(comando, "cq") == 0) {
@@ -128,6 +146,7 @@ bool geo_processar_arquivo(const char* caminho_arquivo, const char* caminho_svg,
             
             fprintf(corpo_svg, "  <rect x=\"%.lf\" y=\"%.lf\" width=\"%.lf\" height=\"%.lf\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%.lf\" />\n", 
                     x, y, w, h, cor_preenchimento, cor_borda, espessura_borda);
+            desenhar_texto_quadra(cep, x, y, &svg_ctx);
             svg_bounds_expandir_retangulo(&bounds, x - (espessura_borda / 2.0), y - (espessura_borda / 2.0),
                                           w + espessura_borda, h + espessura_borda);
         }
