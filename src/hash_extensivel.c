@@ -93,8 +93,7 @@ bool hash_buscar(HashExtensivel* ptr_hash, const char* chave, char* saida_dado) 
     for (int i = 0; i < b.quantidade; i++) {
         if (strcmp(b.registros[i].chave, chave) == 0) { 
             if (saida_dado != NULL) {
-                strncpy(saida_dado, b.registros[i].dado, TAMANHO_DADO);
-                saida_dado[TAMANHO_DADO - 1] = '\0'; 
+                strcpy(saida_dado, b.registros[i].dado);
             }
             return true;
         }

@@ -39,11 +39,23 @@ int main(int argc, char *argv[]) {
     
     criar_diretorio(saida_pasta);
 
-    char caminho_geo[512], caminho_svg[512];
+    char caminho_geo[512], caminho_svg[512], caminho_hash_quadras[512];
     snprintf(caminho_geo, sizeof(caminho_geo), "%s/%s", prefixo_pasta, entrada_geo);
-    snprintf(caminho_svg, sizeof(caminho_svg), "%s/geo_output.svg", saida_pasta);
+    const char *nome_geo = strrchr(entrada_geo, '/');
+    if (nome_geo) nome_geo++;
+    else nome_geo = entrada_geo;
 
-    HashExtensivel* hash_quadras = hash_criar(2, "hash_quadras.hf");
+    char nome_geo_sem_ext[256];
+    strncpy(nome_geo_sem_ext, nome_geo, sizeof(nome_geo_sem_ext) - 1);
+    nome_geo_sem_ext[sizeof(nome_geo_sem_ext) - 1] = '\0';
+
+    char *ponto = strrchr(nome_geo_sem_ext, '.');
+    if (ponto) *ponto = '\0';
+
+    snprintf(caminho_svg, sizeof(caminho_svg), "%s/%s.svg", saida_pasta, nome_geo_sem_ext);
+    snprintf(caminho_hash_quadras, sizeof(caminho_hash_quadras), "%s/%s.hs", saida_pasta, nome_geo_sem_ext);
+
+    HashExtensivel* hash_quadras = hash_criar(2, caminho_hash_quadras);
     if (!hash_quadras) {
         printf("Erro: Nao foi possivel criar o arquivo hash para as quadras.\n");
         return EXIT_FAILURE;
@@ -62,7 +74,25 @@ int main(int argc, char *argv[]) {
         char caminho_pm[512];
         snprintf(caminho_pm, sizeof(caminho_pm), "%s/%s", prefixo_pasta, entrada_pessoas);
         
-        hash_habitantes = hash_criar(2, "hash_habitantes.hf");
+       char nome_hash[512];
+
+if (entrada_qry) {
+    const char *nome_qry = strrchr(entrada_qry, '/');
+    if (nome_qry) nome_qry++;
+    else nome_qry = entrada_qry;
+
+    char nome_qry_sem_ext[256];
+    strncpy(nome_qry_sem_ext, nome_qry, sizeof(nome_qry_sem_ext));
+
+    char *ponto = strrchr(nome_qry_sem_ext, '.');
+    if (ponto) *ponto = '\0';
+
+    snprintf(nome_hash, sizeof(nome_hash), "%s/%s.hash", saida_pasta, nome_qry_sem_ext);
+} else {
+    snprintf(nome_hash, sizeof(nome_hash), "%s/default.hs", saida_pasta);
+}
+
+hash_habitantes = hash_criar(2, nome_hash);
         if (hash_habitantes) {
             pm_processar_arquivo(caminho_pm, hash_habitantes);
         } else {

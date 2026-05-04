@@ -97,8 +97,29 @@ double quadra_get_sw(Quadra q);
  */
 void quadra_destruir(Quadra q);
 
+/**
+ * @brief Função callback para desenhar quadras durante iteração na estrutura de dados.
+ * @details Esta função é utilizada como callback para iterar sobre as quadras armazenadas
+ * em uma estrutura de dados (como hash) e desenhar suas representações.
+ * @param[in] chave Chave identificadora da quadra (CEP).
+ * @param[in] dado Dados da quadra em formato serializado.
+ * @param[in,out] extra Ponteiro para dados extras, como arquivo de saída ou contexto de desenho.
+ */
 void desenhar_quadras(const char* chave, const char* dado, void* extra);
 
+/**
+ * @brief Calcula a coordenada (x, y) de um endereço dentro de uma quadra.
+ * @details A partir das dimensões da quadra, da face (lado) e número do endereço,
+ * calcula a posição aproximada do endereço para renderização visual.
+ * @param[in] q_x Coordenada X do canto superior esquerdo da quadra.
+ * @param[in] q_y Coordenada Y do canto superior esquerdo da quadra.
+ * @param[in] q_w Largura da quadra.
+ * @param[in] q_h Altura da quadra.
+ * @param[in] face Lado da quadra (caractere identificador: 'N', 'S', 'L', 'O', etc).
+ * @param[in] num Número do endereço na face.
+ * @param[out] out_x Ponteiro para armazenar a coordenada X calculada.
+ * @param[out] out_y Ponteiro para armazenar a coordenada Y calculada.
+ */
 void calcular_coordenada_endereco(double q_x, double q_y, double q_w, double q_h, char face, int num, double *out_x, double *out_y);
 
 #endif

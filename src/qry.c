@@ -302,14 +302,25 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
                     ContextoRemocaoQuadra ctx = {cep, hh, saida};
                     hash_iterar(hh, callback_remocao_quadra, &ctx);
                     
-                    // Remove a quadra
                     hash_remover(hq, cep);
                     fprintf(saida, "Quadra %s removida com sucesso.\n", cep);
-                    
-                    // Desenha X no SVG
+                    // Apaga visualmente a quadra removida e desenha o X no SVG.
                     if (svg) {
-                        double x, y, w, h;
-                        if (sscanf(dados_quadra, "%lf;%lf;%lf;%lf", &x, &y, &w, &h) == 4) {
+                        double x, y, w, h, espessura = 0.0;
+                        int campos = sscanf(dados_quadra, "%lf;%lf;%lf;%lf;%*29[^;];%*29[^;];%lf", &x, &y, &w, &h, &espessura);
+                        if (campos >= 4) {
+                            double margem = (espessura / 2.0) + 18.0;
+                            double largura_cep = strlen(cep) * 12.0 * 0.60;
+                            double largura_cobertura = w;
+                            if (largura_cep + 10.0 > largura_cobertura) {
+                                largura_cobertura = largura_cep + 10.0;
+                            }
+
+                            fprintf(svg, "\t<rect x=\"%.2lf\" y=\"%.2lf\" width=\"%.2lf\" height=\"%.2lf\" fill=\"white\" stroke=\"white\" stroke-width=\"0\" />\n",
+                                    x - margem, y - margem, largura_cobertura + (2.0 * margem), h + (2.0 * margem));
+                            svg_bounds_expandir_retangulo(&bounds, x - margem, y - margem,
+                                                          largura_cobertura + (2.0 * margem), h + (2.0 * margem));
+
                             double centro_x = x + (w / 2.0) - 12.0;
                             double centro_y = y + (h / 2.0) + 14.0;
                             fprintf(svg, "\t<text x=\"%.2lf\" y=\"%.2lf\" fill=\"red\" font-size=\"40\" font-weight=\"bold\">X</text>\n", centro_x, centro_y);
