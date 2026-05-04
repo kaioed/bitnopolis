@@ -113,6 +113,22 @@ static bool svg_escrever_arquivo_final(const char* caminho_svg, FILE* corpo_svg,
     return true;
 }
 
+static bool svg_copiar_conteudo(FILE* origem, FILE* destino) {
+    if (origem == NULL || destino == NULL) return false;
+
+    rewind(origem);
+
+    char buffer[4096];
+    size_t lidos;
+    while ((lidos = fread(buffer, 1, sizeof(buffer), origem)) > 0) {
+        if (fwrite(buffer, 1, lidos, destino) != lidos) {
+            return false;
+        }
+    }
+
+    return ferror(origem) == 0;
+}
+
 typedef struct {
     int total_habitantes;
     int moradores;
@@ -276,12 +292,6 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
     HashExtensivel* hh = (HashExtensivel*)hash_habitantes;
     SvgBounds bounds;
     svg_bounds_inicializar(&bounds);
-    SvgContext svg_ctx = {svg, &bounds};
-
-    if (svg) {
-        hash_iterar(hq, desenhar_quadras_svg, &svg_ctx);
-        hash_iterar(hq, desenhar_textos_quadras, &svg_ctx); 
-    }
     
     char linha[256];
     while (fgets(linha, sizeof(linha), file)) {
@@ -304,23 +314,10 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
                     
                     hash_remover(hq, cep);
                     fprintf(saida, "Quadra %s removida com sucesso.\n", cep);
-                    // Apaga visualmente a quadra removida e desenha o X no SVG.
+                    // Marca a posicao da quadra removida; a quadra em si nao sera emitida no SVG final.
                     if (svg) {
-                        double x, y, w, h, espessura = 0.0;
-                        int campos = sscanf(dados_quadra, "%lf;%lf;%lf;%lf;%*29[^;];%*29[^;];%lf", &x, &y, &w, &h, &espessura);
-                        if (campos >= 4) {
-                            double margem = (espessura / 2.0) + 18.0;
-                            double largura_cep = strlen(cep) * 12.0 * 0.60;
-                            double largura_cobertura = w;
-                            if (largura_cep + 10.0 > largura_cobertura) {
-                                largura_cobertura = largura_cep + 10.0;
-                            }
-
-                            fprintf(svg, "\t<rect x=\"%.2lf\" y=\"%.2lf\" width=\"%.2lf\" height=\"%.2lf\" fill=\"white\" stroke=\"white\" stroke-width=\"0\" />\n",
-                                    x - margem, y - margem, largura_cobertura + (2.0 * margem), h + (2.0 * margem));
-                            svg_bounds_expandir_retangulo(&bounds, x - margem, y - margem,
-                                                          largura_cobertura + (2.0 * margem), h + (2.0 * margem));
-
+                        double x, y, w, h;
+                        if (sscanf(dados_quadra, "%lf;%lf;%lf;%lf", &x, &y, &w, &h) == 4) {
                             double centro_x = x + (w / 2.0) - 12.0;
                             double centro_y = y + (h / 2.0) + 14.0;
                             fprintf(svg, "\t<text x=\"%.2lf\" y=\"%.2lf\" fill=\"red\" font-size=\"40\" font-weight=\"bold\">X</text>\n", centro_x, centro_y);
@@ -606,8 +603,20 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
     }
     
     if (svg) {
-        if (svg_escrever_arquivo_final(caminho_svg, svg, &bounds)) {
-            printf("SVG do QRY gerado com sucesso em: %s\n", caminho_svg);
+        FILE* corpo_svg = tmpfile();
+        if (corpo_svg) {
+            SvgContext svg_ctx = {corpo_svg, &bounds};
+            hash_iterar(hq, desenhar_quadras_svg, &svg_ctx);
+            hash_iterar(hq, desenhar_textos_quadras, &svg_ctx);
+
+            if (!svg_copiar_conteudo(svg, corpo_svg)) {
+                printf("Erro: Falha ao montar o SVG do QRY em: %s\n", caminho_svg);
+            } else if (svg_escrever_arquivo_final(caminho_svg, corpo_svg, &bounds)) {
+                printf("SVG do QRY gerado com sucesso em: %s\n", caminho_svg);
+            } else {
+                printf("Erro: Falha ao gerar o SVG do QRY em: %s\n", caminho_svg);
+            }
+            fclose(corpo_svg);
         } else {
             printf("Erro: Falha ao gerar o SVG do QRY em: %s\n", caminho_svg);
         }
