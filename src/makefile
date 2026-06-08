@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -std=c99 -Wall -Wextra -DUNITY_INCLUDE_DOUBLE -I../include -I../test/Unity -g
 
 # Pega todos os arquivos .c dentro da pasta src atual e o main.c na pasta raiz (../)
-SRCS = $(wildcard *.c) ../main.c
+SRCS = $(wildcard *.c)
 
 # Converte a lista de .c para .o correspondentes
 OBJS = $(SRCS:.c=.o)
