@@ -4,13 +4,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "include/arg.h"
-#include "include/geo.h"
-#include "include/pm.h"
-#include "include/qry.h"
-#include "include/hash_extensivel.h"
-#include "include/quadra.h"
-
+#include "../include/arg.h"
+#include "../include/geo.h"
+#include "../include/pm.h"
+#include "../include/qry.h"
+#include "../include/hash_extensivel.h"
+#include "../include/quadra.h"
 
 void criar_diretorio(const char *caminho) {
     struct stat st = {0};
