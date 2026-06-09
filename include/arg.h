@@ -24,7 +24,7 @@
  * @param[in] opt_name nome da opção (sem o '-'). Exemplo: "opt".
  * @return Ponteiro para a string do valor encontrado ou NULL se não encontrado.
  */
-char *obter_valor_opcao(int argc, char *argv[], char *opt_name);
+char *obter_valor_opcao(int argc, char *argv[], const char *opt_name);
 
 /**
  * @brief Obtém o sufixo do comando (última string que não começa com '-').

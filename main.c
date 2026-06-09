@@ -4,19 +4,47 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "../include/arg.h"
-#include "../include/geo.h"
-#include "../include/pm.h"
-#include "../include/qry.h"
-#include "../include/hash_extensivel.h"
-#include "../include/quadra.h"
+#if defined(_WIN32)
+#include <direct.h>
+#endif
+
+#include "arg.h"
+#include "geo.h"
+#include "hash_extensivel.h"
+#include "pm.h"
+#include "qry.h"
+#include "quadra.h"
+
+
+static const char *obter_nome_arquivo(const char *caminho) {
+    const char *nome = strrchr(caminho, '/');
+    const char *nome_windows = strrchr(caminho, '\\');
+
+    if (nome_windows && (!nome || nome_windows > nome)) {
+        nome = nome_windows;
+    }
+
+    return nome ? nome + 1 : caminho;
+}
+
+static void copiar_nome_sem_extensao(const char *caminho, char *saida, size_t tamanho_saida) {
+    const char *nome = obter_nome_arquivo(caminho);
+
+    strncpy(saida, nome, tamanho_saida - 1);
+    saida[tamanho_saida - 1] = '\0';
+
+    char *ponto = strrchr(saida, '.');
+    if (ponto) {
+        *ponto = '\0';
+    }
+}
 
 void criar_diretorio(const char *caminho) {
     struct stat st = {0};
     if (stat(caminho, &st) == -1) {
         
         #if defined(_WIN32)
-            mkdir(caminho);
+            _mkdir(caminho);
         #else
             mkdir(caminho, 0777);
         #endif
@@ -40,16 +68,9 @@ int main(int argc, char *argv[]) {
 
     char caminho_geo[512], caminho_svg[512], caminho_hash_quadras[512];
     snprintf(caminho_geo, sizeof(caminho_geo), "%s/%s", prefixo_pasta, entrada_geo);
-    const char *nome_geo = strrchr(entrada_geo, '/');
-    if (nome_geo) nome_geo++;
-    else nome_geo = entrada_geo;
 
     char nome_geo_sem_ext[256];
-    strncpy(nome_geo_sem_ext, nome_geo, sizeof(nome_geo_sem_ext) - 1);
-    nome_geo_sem_ext[sizeof(nome_geo_sem_ext) - 1] = '\0';
-
-    char *ponto = strrchr(nome_geo_sem_ext, '.');
-    if (ponto) *ponto = '\0';
+    copiar_nome_sem_extensao(entrada_geo, nome_geo_sem_ext, sizeof(nome_geo_sem_ext));
 
     snprintf(caminho_svg, sizeof(caminho_svg), "%s/%s.svg", saida_pasta, nome_geo_sem_ext);
     snprintf(caminho_hash_quadras, sizeof(caminho_hash_quadras), "%s/%s.hs", saida_pasta, nome_geo_sem_ext);
@@ -72,26 +93,19 @@ int main(int argc, char *argv[]) {
     if (entrada_pessoas) {
         char caminho_pm[512];
         snprintf(caminho_pm, sizeof(caminho_pm), "%s/%s", prefixo_pasta, entrada_pessoas);
-        
-       char nome_hash[512];
 
-if (entrada_qry) {
-    const char *nome_qry = strrchr(entrada_qry, '/');
-    if (nome_qry) nome_qry++;
-    else nome_qry = entrada_qry;
+        char nome_hash[512];
 
-    char nome_qry_sem_ext[256];
-    strncpy(nome_qry_sem_ext, nome_qry, sizeof(nome_qry_sem_ext));
+        if (entrada_qry) {
+            char nome_qry_sem_ext[256];
+            copiar_nome_sem_extensao(entrada_qry, nome_qry_sem_ext, sizeof(nome_qry_sem_ext));
 
-    char *ponto = strrchr(nome_qry_sem_ext, '.');
-    if (ponto) *ponto = '\0';
+            snprintf(nome_hash, sizeof(nome_hash), "%s/%s.hash", saida_pasta, nome_qry_sem_ext);
+        } else {
+            snprintf(nome_hash, sizeof(nome_hash), "%s/default.hs", saida_pasta);
+        }
 
-    snprintf(nome_hash, sizeof(nome_hash), "%s/%s.hash", saida_pasta, nome_qry_sem_ext);
-} else {
-    snprintf(nome_hash, sizeof(nome_hash), "%s/default.hs", saida_pasta);
-}
-
-hash_habitantes = hash_criar(2, nome_hash);
+        hash_habitantes = hash_criar(2, nome_hash);
         if (hash_habitantes) {
             pm_processar_arquivo(caminho_pm, hash_habitantes);
         } else {
@@ -102,13 +116,12 @@ hash_habitantes = hash_criar(2, nome_hash);
     if (entrada_qry) {
         char caminho_qry[512], caminho_saida_qry[512];
         snprintf(caminho_qry, sizeof(caminho_qry), "%s/%s", prefixo_pasta, entrada_qry);
-        
-        
-        const char *nome_qry = strrchr(entrada_qry, '/');
-        if (nome_qry) nome_qry++;
-        else nome_qry = entrada_qry;
-        
-        snprintf(caminho_saida_qry, sizeof(caminho_saida_qry), "%s/%s.txt", saida_pasta, nome_qry);
+
+        char nome_qry_sem_ext[256];
+        copiar_nome_sem_extensao(entrada_qry, nome_qry_sem_ext, sizeof(nome_qry_sem_ext));
+
+        snprintf(caminho_saida_qry, sizeof(caminho_saida_qry), "%s/%s-%s.txt",
+                 saida_pasta, nome_geo_sem_ext, nome_qry_sem_ext);
         
         printf("Processando arquivo QRY '%s'...\n", entrada_qry);
         processar_qry(caminho_qry, caminho_saida_qry, hash_quadras, hash_habitantes);

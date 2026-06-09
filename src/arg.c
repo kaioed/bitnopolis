@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *obter_valor_opcao(int argc, char *argv[], char *opt_name) {
+char *obter_valor_opcao(int argc, char *argv[], const char *opt_name) {
   char formato_opt[64];
   snprintf(formato_opt, sizeof(formato_opt), "-%s", opt_name);
 

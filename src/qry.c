@@ -138,10 +138,40 @@ typedef struct {
 } CensoStats;
 
 typedef struct {
+    char chave[TAMANHO_CHAVE];
+    char dado[TAMANHO_DADO];
+} RegistroRemocaoHabitante;
+
+typedef struct {
     const char* cep_alvo;
     HashExtensivel* hash_habitantes;
     FILE* arquivo_saida;
+    RegistroRemocaoHabitante* registros;
+    size_t quantidade;
+    size_t capacidade;
 } ContextoRemocaoQuadra;
+
+static bool registrar_remocao_habitante(ContextoRemocaoQuadra* ctx, const char* chave, const char* dado) {
+    if (ctx->quantidade == ctx->capacidade) {
+        size_t nova_capacidade = ctx->capacidade == 0 ? 8 : ctx->capacidade * 2;
+        RegistroRemocaoHabitante* novos_registros = realloc(ctx->registros, nova_capacidade * sizeof(RegistroRemocaoHabitante));
+        if (!novos_registros) {
+            return false;
+        }
+
+        ctx->registros = novos_registros;
+        ctx->capacidade = nova_capacidade;
+    }
+
+    strncpy(ctx->registros[ctx->quantidade].chave, chave, TAMANHO_CHAVE - 1);
+    ctx->registros[ctx->quantidade].chave[TAMANHO_CHAVE - 1] = '\0';
+
+    strncpy(ctx->registros[ctx->quantidade].dado, dado, TAMANHO_DADO - 1);
+    ctx->registros[ctx->quantidade].dado[TAMANHO_DADO - 1] = '\0';
+
+    ctx->quantidade++;
+    return true;
+}
 
 typedef struct {
     const char* cep_alvo;
@@ -186,8 +216,10 @@ void callback_remocao_quadra(const char* chave, const char* dado, void* extra) {
         char novos_dados[TAMANHO_DADO];
         snprintf(novos_dados, sizeof(novos_dados), "%s;%s;%c;%s;0;SEM_TETO;X;0;none", 
                  nome, sobrenome, sexo, nasc);
-        hash_remover(ctx->hash_habitantes, chave);
-        hash_inserir(ctx->hash_habitantes, chave, novos_dados);
+
+        if (!registrar_remocao_habitante(ctx, chave, novos_dados)) {
+            fprintf(ctx->arquivo_saida, "  Aviso: falha ao registrar remocao do morador %s.\n", chave);
+        }
     }
 }
 
@@ -309,8 +341,13 @@ void processar_qry(const char* caminho_qry, const char* caminho_saida, void* has
                 
                 if (hash_buscar(hq, cep, dados_quadra)) {
                     // Lista moradores que serão sem-tetos
-                    ContextoRemocaoQuadra ctx = {cep, hh, saida};
+                    ContextoRemocaoQuadra ctx = {cep, hh, saida, NULL, 0, 0};
                     hash_iterar(hh, callback_remocao_quadra, &ctx);
+                    for (size_t i = 0; i < ctx.quantidade; i++) {
+                        hash_remover(hh, ctx.registros[i].chave);
+                        hash_inserir(hh, ctx.registros[i].chave, ctx.registros[i].dado);
+                    }
+                    free(ctx.registros);
                     
                     hash_remover(hq, cep);
                     fprintf(saida, "Quadra %s removida com sucesso.\n", cep);

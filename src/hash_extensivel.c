@@ -63,7 +63,7 @@ HashExtensivel* hash_criar(int profundidade_inicial, const char* nome_arquivo) {
     hash->profundidade_global = profundidade_inicial;
     hash->tamanho_diretorio = 1 << profundidade_inicial;
     hash->diretorio_offsets = (long*)malloc(hash->tamanho_diretorio * sizeof(long));
-    
+
     hash->arquivo = fopen(nome_arquivo, "wb+");
     if (!hash->arquivo) {
         free(hash->diretorio_offsets);
