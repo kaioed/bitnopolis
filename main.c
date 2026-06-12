@@ -27,16 +27,92 @@ static const char *obter_nome_arquivo(const char *caminho) {
     return nome ? nome + 1 : caminho;
 }
 
-static void copiar_nome_sem_extensao(const char *caminho, char *saida, size_t tamanho_saida) {
+static char *copiar_nome_sem_extensao(const char *caminho) {
     const char *nome = obter_nome_arquivo(caminho);
+    const char *ponto = strrchr(nome, '.');
+    size_t tamanho = ponto ? (size_t)(ponto - nome) : strlen(nome);
 
-    strncpy(saida, nome, tamanho_saida - 1);
-    saida[tamanho_saida - 1] = '\0';
-
-    char *ponto = strrchr(saida, '.');
-    if (ponto) {
-        *ponto = '\0';
+    char *saida = (char *)malloc(tamanho + 1);
+    if (!saida) {
+        return NULL;
     }
+
+    memcpy(saida, nome, tamanho);
+    saida[tamanho] = '\0';
+    return saida;
+}
+
+static int tamanho_estourou(size_t atual, size_t adicional) {
+    return atual > (size_t)-1 - adicional;
+}
+
+static char *montar_caminho(const char *pasta, const char *nome, const char *sufixo) {
+    size_t tam_pasta = strlen(pasta);
+    size_t tam_nome = strlen(nome);
+    size_t tam_sufixo = strlen(sufixo);
+
+    if (tamanho_estourou(tam_pasta, 1) ||
+        tamanho_estourou(tam_pasta + 1, tam_nome) ||
+        tamanho_estourou(tam_pasta + 1 + tam_nome, tam_sufixo) ||
+        tamanho_estourou(tam_pasta + 1 + tam_nome + tam_sufixo, 1)) {
+        return NULL;
+    }
+
+    size_t tamanho = tam_pasta + 1 + tam_nome + tam_sufixo + 1;
+    char *resultado = (char *)malloc(tamanho);
+    if (!resultado) {
+        return NULL;
+    }
+
+    char *pos = resultado;
+    memcpy(pos, pasta, tam_pasta);
+    pos += tam_pasta;
+    *pos++ = '/';
+    memcpy(pos, nome, tam_nome);
+    pos += tam_nome;
+    memcpy(pos, sufixo, tam_sufixo);
+    pos += tam_sufixo;
+    *pos = '\0';
+
+    return resultado;
+}
+
+static char *montar_saida_qry(const char *pasta, const char *nome_geo, const char *nome_qry) {
+    const char *sufixo = ".txt";
+    size_t tam_pasta = strlen(pasta);
+    size_t tam_geo = strlen(nome_geo);
+    size_t tam_qry = strlen(nome_qry);
+    size_t tam_sufixo = strlen(sufixo);
+
+    if (tamanho_estourou(tam_pasta, 1) ||
+        tamanho_estourou(tam_pasta + 1, tam_geo) ||
+        tamanho_estourou(tam_pasta + 1 + tam_geo, 1) ||
+        tamanho_estourou(tam_pasta + 1 + tam_geo + 1, tam_qry) ||
+        tamanho_estourou(tam_pasta + 1 + tam_geo + 1 + tam_qry, tam_sufixo) ||
+        tamanho_estourou(tam_pasta + 1 + tam_geo + 1 + tam_qry + tam_sufixo, 1)) {
+        return NULL;
+    }
+
+    size_t tamanho = tam_pasta + 1 + tam_geo + 1 + tam_qry + tam_sufixo + 1;
+    char *resultado = (char *)malloc(tamanho);
+    if (!resultado) {
+        return NULL;
+    }
+
+    char *pos = resultado;
+    memcpy(pos, pasta, tam_pasta);
+    pos += tam_pasta;
+    *pos++ = '/';
+    memcpy(pos, nome_geo, tam_geo);
+    pos += tam_geo;
+    *pos++ = '-';
+    memcpy(pos, nome_qry, tam_qry);
+    pos += tam_qry;
+    memcpy(pos, sufixo, tam_sufixo);
+    pos += tam_sufixo;
+    *pos = '\0';
+
+    return resultado;
 }
 
 void criar_diretorio(const char *caminho) {
@@ -57,52 +133,64 @@ int main(int argc, char *argv[]) {
     const char *entrada_qry     = obter_valor_opcao(argc, argv, "q");
     const char *prefixo_pasta   = obter_valor_opcao(argc, argv, "e");
     const char *entrada_pessoas = obter_valor_opcao(argc, argv, "pm");
+    int status = EXIT_FAILURE;
+
+    char *caminho_geo = NULL;
+    char *caminho_svg = NULL;
+    char *caminho_hash_quadras = NULL;
+    char *nome_geo_sem_ext = NULL;
+    char *caminho_pm = NULL;
+    char *nome_hash = NULL;
+    char *nome_qry_sem_ext = NULL;
+    char *caminho_qry = NULL;
+    char *caminho_saida_qry = NULL;
+    HashExtensivel* hash_quadras = NULL;
+    HashExtensivel* hash_habitantes = NULL;
 
     if (entrada_geo == NULL || saida_pasta == NULL || prefixo_pasta == NULL) {
         printf("Erro: Faltam argumentos obrigatorios (-f, -o, ou -e).\n");
-        return EXIT_FAILURE;
+        goto finalizar;
     }
 
     
     criar_diretorio(saida_pasta);
 
-    char caminho_geo[512], caminho_svg[512], caminho_hash_quadras[512];
-    snprintf(caminho_geo, sizeof(caminho_geo), "%s/%s", prefixo_pasta, entrada_geo);
+    nome_geo_sem_ext = copiar_nome_sem_extensao(entrada_geo);
+    caminho_geo = montar_caminho(prefixo_pasta, entrada_geo, "");
+    caminho_svg = montar_caminho(saida_pasta, nome_geo_sem_ext ? nome_geo_sem_ext : "", ".svg");
+    caminho_hash_quadras = montar_caminho(saida_pasta, nome_geo_sem_ext ? nome_geo_sem_ext : "", ".hs");
 
-    char nome_geo_sem_ext[256];
-    copiar_nome_sem_extensao(entrada_geo, nome_geo_sem_ext, sizeof(nome_geo_sem_ext));
+    if (!nome_geo_sem_ext || !caminho_geo || !caminho_svg || !caminho_hash_quadras) {
+        printf("Erro: Memoria insuficiente ao montar caminhos de arquivo.\n");
+        goto finalizar;
+    }
 
-    snprintf(caminho_svg, sizeof(caminho_svg), "%s/%s.svg", saida_pasta, nome_geo_sem_ext);
-    snprintf(caminho_hash_quadras, sizeof(caminho_hash_quadras), "%s/%s.hs", saida_pasta, nome_geo_sem_ext);
-
-    HashExtensivel* hash_quadras = hash_criar(2, caminho_hash_quadras);
+    hash_quadras = hash_criar(2, caminho_hash_quadras);
     if (!hash_quadras) {
         printf("Erro: Nao foi possivel criar o arquivo hash para as quadras.\n");
-        return EXIT_FAILURE;
+        goto finalizar;
     }
 
     if (!geo_processar_arquivo(caminho_geo, caminho_svg, hash_quadras)) {
         printf("Erro: Falha ao processar o arquivo GEO. Verifique se o arquivo '%s' existe.\n", caminho_geo);
-        hash_destruir(hash_quadras);
-        return EXIT_FAILURE;
+        goto finalizar;
     }else {
         printf("Arquivo GEO processado com sucesso. SVG gerado em: %s\n", caminho_svg);
     }
 
-    HashExtensivel* hash_habitantes = NULL;
     if (entrada_pessoas) {
-        char caminho_pm[512];
-        snprintf(caminho_pm, sizeof(caminho_pm), "%s/%s", prefixo_pasta, entrada_pessoas);
-
-        char nome_hash[512];
+        caminho_pm = montar_caminho(prefixo_pasta, entrada_pessoas, "");
 
         if (entrada_qry) {
-            char nome_qry_sem_ext[256];
-            copiar_nome_sem_extensao(entrada_qry, nome_qry_sem_ext, sizeof(nome_qry_sem_ext));
-
-            snprintf(nome_hash, sizeof(nome_hash), "%s/%s.hash", saida_pasta, nome_qry_sem_ext);
+            nome_qry_sem_ext = copiar_nome_sem_extensao(entrada_qry);
+            nome_hash = montar_caminho(saida_pasta, nome_qry_sem_ext ? nome_qry_sem_ext : "", ".hash");
         } else {
-            snprintf(nome_hash, sizeof(nome_hash), "%s/default.hs", saida_pasta);
+            nome_hash = montar_caminho(saida_pasta, "default", ".hs");
+        }
+
+        if (!caminho_pm || !nome_hash || (entrada_qry && !nome_qry_sem_ext)) {
+            printf("Erro: Memoria insuficiente ao montar caminhos de arquivo.\n");
+            goto finalizar;
         }
 
         hash_habitantes = hash_criar(2, nome_hash);
@@ -114,14 +202,16 @@ int main(int argc, char *argv[]) {
     }
 
     if (entrada_qry) {
-        char caminho_qry[512], caminho_saida_qry[512];
-        snprintf(caminho_qry, sizeof(caminho_qry), "%s/%s", prefixo_pasta, entrada_qry);
+        caminho_qry = montar_caminho(prefixo_pasta, entrada_qry, "");
 
-        char nome_qry_sem_ext[256];
-        copiar_nome_sem_extensao(entrada_qry, nome_qry_sem_ext, sizeof(nome_qry_sem_ext));
-
-        snprintf(caminho_saida_qry, sizeof(caminho_saida_qry), "%s/%s-%s.txt",
-                 saida_pasta, nome_geo_sem_ext, nome_qry_sem_ext);
+        if (!nome_qry_sem_ext) {
+            nome_qry_sem_ext = copiar_nome_sem_extensao(entrada_qry);
+        }
+        caminho_saida_qry = montar_saida_qry(saida_pasta, nome_geo_sem_ext, nome_qry_sem_ext ? nome_qry_sem_ext : "");
+        if (!caminho_qry || !nome_qry_sem_ext || !caminho_saida_qry) {
+            printf("Erro: Memoria insuficiente ao montar caminhos de arquivo.\n");
+            goto finalizar;
+        }
         
         printf("Processando arquivo QRY '%s'...\n", entrada_qry);
         processar_qry(caminho_qry, caminho_saida_qry, hash_quadras, hash_habitantes);
@@ -130,9 +220,22 @@ int main(int argc, char *argv[]) {
     }
     printf("finalizando processamento...\n");
 
-    hash_destruir(hash_quadras);
-    if (hash_habitantes) hash_destruir(hash_habitantes);
+    status = EXIT_SUCCESS;
 
     printf("Processamento concluido com sucesso! Os arquivos foram gerados na pasta '%s'.\n", saida_pasta);
-    return EXIT_SUCCESS;
+
+finalizar:
+    if (hash_quadras) hash_destruir(hash_quadras);
+    if (hash_habitantes) hash_destruir(hash_habitantes);
+    free(caminho_geo);
+    free(caminho_svg);
+    free(caminho_hash_quadras);
+    free(nome_geo_sem_ext);
+    free(caminho_pm);
+    free(nome_hash);
+    free(nome_qry_sem_ext);
+    free(caminho_qry);
+    free(caminho_saida_qry);
+
+    return status;
 }
